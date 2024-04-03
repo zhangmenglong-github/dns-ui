@@ -115,13 +115,25 @@ export default {
         if (valid) {
           this.loading = true;
           register(this.registerForm).then(res => {
-            const username = this.registerForm.username;
-            this.$alert("<font color='red'>恭喜你，您的账号 " + username + " 注册成功！</font>", '系统提示', {
-              dangerouslyUseHTMLString: true,
-              type: 'success'
-            }).then(() => {
-              this.$router.push("/login");
-            }).catch(() => {});
+            if (res.data == -1) {
+              this.registerForm.code = null;
+              this.registerRules.code[0].message = "注册码错误，请重新输入"
+              this.$refs.registerForm.validate(valid => {
+                this.loading = false;
+                this.$nextTick(() => {
+                  this.registerRules.code[0].message = "请输入注册码"
+                })
+              })
+            } else {
+              const username = this.registerForm.username;
+              this.$alert("<font color='red'>恭喜你，您的账号 " + username + " 注册成功！</font>", '系统提示', {
+                dangerouslyUseHTMLString: true,
+                type: 'success'
+              }).then(() => {
+                this.$router.push("/login");
+              }).catch(() => {});
+            }
+
           }).catch(() => {
             this.loading = false;
           })
@@ -146,9 +158,11 @@ export default {
     justify-content: center;
   }
   .register-wechat-qrcode-tips{
-    font-size: 1px;
+    font-weight: bold;
+    font-size: 12px;
   }
   .register-form {
+    opacity: 0.9;
     border-radius: 6px;
     background: #ffffff;
     width: 400px;

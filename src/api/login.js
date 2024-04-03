@@ -22,7 +22,7 @@ export function login(username, password, code, uuid) {
 // 注册方法
 export function register(data) {
   return request({
-    url: '/register',
+    url: '/platform/user/register',
     headers: {
       isToken: false
     },
