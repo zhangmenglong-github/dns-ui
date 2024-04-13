@@ -117,13 +117,21 @@ export default {
           register(this.registerForm).then(res => {
             if (res.data == -1) {
               this.registerForm.code = null;
-              this.registerRules.code[0].message = "注册码错误，请重新输入"
+              this.registerRules.code[0].message = "注册码错误，请重新输入";
               this.$refs.registerForm.validate(valid => {
                 this.loading = false;
                 this.$nextTick(() => {
-                  this.registerRules.code[0].message = "请输入注册码"
+                  this.registerRules.code[0].message = "请输入注册码";
                 })
               })
+            } else if (res.data == -2) {
+              this.$message.error("密码不能为空");
+            } else if (res.data == -3) {
+              this.$message.error("密码长度必须在5到20个字符之间");
+            } else if (res.data == -4) {
+              this.$message.error("注册失败，注册账号已存在");
+            } else if (res.data == -5) {
+              this.$message.error("注册失败,请联系系统管理人员");
             } else {
               const username = this.registerForm.username;
               this.$alert("<font color='red'>恭喜你，您的账号 " + username + " 注册成功！</font>", '系统提示', {
