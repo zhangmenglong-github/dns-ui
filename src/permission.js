@@ -8,7 +8,7 @@ import { isRelogin } from '@/utils/request'
 
 NProgress.configure({ showSpinner: false })
 
-const whiteList = ['/login', '/register']
+const whiteList = ['/login', '/register', '/']
 
 router.beforeEach((to, from, next) => {
   NProgress.start()
@@ -16,10 +16,10 @@ router.beforeEach((to, from, next) => {
     to.meta.title && store.dispatch('settings/setTitle', to.meta.title)
     /* has token*/
     if (to.path === '/login') {
-      next({ path: '/' })
+      next({ path: '/adminIndex' })
       NProgress.done()
     } else if (whiteList.indexOf(to.path) !== -1) {
-      next()
+      next();
     } else {
       if (store.getters.roles.length === 0) {
         isRelogin.show = true

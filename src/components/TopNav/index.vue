@@ -35,7 +35,7 @@
 import { constantRoutes } from "@/router";
 
 // 隐藏侧边栏路由
-const hideList = ['/index', '/user/profile'];
+const hideList = ['/adminIndex', '/user/profile'];
 
 export default {
   data() {
