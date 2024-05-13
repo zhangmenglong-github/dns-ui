@@ -26,10 +26,19 @@ export function addDnsDomainName(data) {
   })
 }
 
-// 修改域名
-export function updateDnsDomainName(data) {
+// 验证域名
+export function validateDnsDomainName(data) {
   return request({
-    url: '/platform/dnsDomainName',
+    url: '/platform/dnsDomainName/validate',
+    method: 'put',
+    data: data
+  })
+}
+
+// 修改域名
+export function updateDnsDomainNameDnssec(data) {
+  return request({
+    url: '/platform/dnsDomainName/dnssec',
     method: 'put',
     data: data
   })

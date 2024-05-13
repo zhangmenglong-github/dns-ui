@@ -3,12 +3,9 @@
     <el-container>
       <el-header class="header">
         <el-row class="header-wrapper">
-          <el-col :span="16">
-            <el-row>
-              <el-col></el-col>
-            </el-row>
-          </el-col>
-          <el-col :span="8"></el-col>
+          <el-row class="header-content">
+
+          </el-row>
         </el-row>
       </el-header>
       <el-main>Main</el-main>
@@ -43,6 +40,9 @@ export default {
     .header-wrapper{
       width: 100%;
       height: 72px;
+      .header-content{
+        width: 1280px;
+      }
     }
   }
 }

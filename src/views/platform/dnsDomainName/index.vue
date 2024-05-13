@@ -28,17 +28,6 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['platform:dnsDomainName:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           type="danger"
           plain
           icon="el-icon-delete"
@@ -63,14 +52,55 @@
 
     <el-table v-loading="loading" :data="dnsDomainNameList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="域名" align="center" prop="domainName" />
-      <el-table-column label="DNSSEC" align="center" prop="domainNameDnssec">
+      <el-table-column label="域名" align="center" prop="domainName">
         <template slot-scope="scope">
+          <span>{{punycodeToUnicode(scope.row.domainName)}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="DNSSEC" align="center" prop="domainNameDnssec">
+
+        <template slot-scope="scope">
+          <el-popover
+            v-if="scope.row.domainNameDnssec"
+            ref="dnssecInfo"
+            placement="top-start"
+            title="DS记录信息"
+            trigger="hover">
+            <el-form>
+              <el-form-item label="关键标签:">
+                <span style="word-break: break-all; white-space: normal">{{scope.row.domainNameDnssecDsKeyTag}}</span>
+              </el-form-item>
+              <el-form-item label="加密算法:">
+                <span style="word-break: break-all; white-space: normal">ECDSA Curve P-256 with SHA-256(13)</span>
+              </el-form-item>
+              <el-form-item label="摘要类型:">
+                <span style="word-break: break-all; white-space: normal">SHA256(2)</span>
+              </el-form-item>
+              <el-form-item label="摘要:">
+                <span style="word-break: break-all; white-space: normal">{{scope.row.domainNameDnssecDsDigestValue}}</span>
+              </el-form-item>
+            </el-form>
+            <el-switch
+              slot="reference"
+              @change="handleUpdateDnsDomainNameDnssec($event, scope.row)"
+              v-model="scope.row.domainNameDnssec"
+              active-color="#13ce66"
+              inactive-color="#ff4949">
+            </el-switch>
+          </el-popover>
           <el-switch
+            v-if="!scope.row.domainNameDnssec"
+            @change="handleUpdateDnsDomainNameDnssec($event, scope.row)"
             v-model="scope.row.domainNameDnssec"
             active-color="#13ce66"
             inactive-color="#ff4949">
           </el-switch>
+
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" align="center" prop="domainNameStatus">
+        <template slot-scope="scope">
+          <dict-tag @click="" style="cursor: pointer;" :options="dict.type.domain_status" :value="scope.row.domainNameStatus"/>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" />
@@ -104,27 +134,47 @@
     />
 
     <!-- 添加或修改域名对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="域名" prop="domainName">
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body @open="openAddDomainNameDialog" @close="closeAddDomainNameDialog">
+      <el-form ref="form" :model="form" :rules="rules">
+        <el-form-item label="域名" prop="domainName" v-show="!isValidate">
           <el-input v-model="form.domainName" placeholder="请输入域名" />
         </el-form-item>
+        <el-alert v-show="isValidate"
+                  title="请到域名当前DNS服务商处给该域名添加TXT记录"
+                  type="warning"
+                  show-icon
+                  :closable="false">
+        </el-alert>
+        <el-form-item label="验证域名:" v-show="isValidate">
+          <span>{{punycodeToUnicode('auth.' + form.domainName)}}</span>
+        </el-form-item>
+        <el-form-item label="记录值:" v-show="isValidate">
+          <span>{{validateContent}}</span>
+        </el-form-item>
+
+
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
+        <el-button type="primary" @click="submitForm" v-show="!isValidate">确 定</el-button>
+        <el-button type="primary" @click="submitFormValidateDomainName" v-show="isValidate">验 证</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
   </div>
 </template>
 
 <script>
-import { listDnsDomainName, getDnsDomainName, delDnsDomainName, addDnsDomainName, updateDnsDomainName } from "@/api/platform/dnsDomainName";
+import { listDnsDomainName, getDnsDomainName, delDnsDomainName, addDnsDomainName, validateDnsDomainName, updateDnsDomainNameDnssec } from "@/api/platform/dnsDomainName";
+import punycode from 'punycode'
 
 export default {
   name: "DnsDomainName",
+  dicts: ['domain_status'],
   data() {
     return {
+      validateContent: "",
+      isValidate: false,
       // 遮罩层
       loading: true,
       // 选中数组
@@ -164,6 +214,29 @@ export default {
     this.getList();
   },
   methods: {
+    submitFormValidateDomainName() {
+      validateDnsDomainName(this.form).then(response => {
+        if (response.data.code == 0) {
+          this.$modal.msgSuccess("新增成功");
+          this.open = false;
+          this.getList();
+        } else {
+          this.$modal.msgError(response.data.message);
+        }
+        if (response.data.code == -2) {
+          this.validateContent = response.data.content;
+        }
+      });
+    },
+    closeAddDomainNameDialog() {
+      this.isValidate = false;
+    },
+    openAddDomainNameDialog() {
+      this.isValidate = false;
+    },
+    punycodeToUnicode(domainName) {
+      return punycode.toUnicode(domainName);
+    },
     /** 查询域名列表 */
     getList() {
       this.loading = true;
@@ -212,32 +285,67 @@ export default {
       this.title = "添加域名";
     },
     /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset();
-      const id = row.id || this.ids
-      getDnsDomainName(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改域名";
-      });
+    handleUpdateDnsDomainNameDnssec(dnssec, row) {
+      if (dnssec) {
+        this.$confirm('是否开启DNSSEC?', 'DNSSEC', {
+          confirmButtonText: '开启',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.loading = true;
+          updateDnsDomainNameDnssec(row).then(response => {
+            if (response.data.code == 0) {
+              this.getList();
+              this.$message.success("开启成功!");
+            } else {
+              this.$message.success(response.data.message);
+            }
+
+          })
+        }).catch(() => {
+          row.domainNameDnssec = !dnssec;
+          this.$message.info("已取消")
+        });
+      } else {
+        this.$confirm('是否关闭DNSSEC?', 'DNSSEC', {
+          confirmButtonText: '关闭',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.loading = true;
+          updateDnsDomainNameDnssec(row).then(response => {
+            if (response.data.code == 0) {
+              this.getList();
+              this.$message.success("关闭成功!");
+            } else {
+              this.$message.success(response.data.message);
+            }
+
+          })
+        }).catch(() => {
+          row.domainNameDnssec = !dnssec;
+          this.$message.info("已取消")
+        });
+      }
     },
     /** 提交按钮 */
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          if (this.form.id != null) {
-            updateDnsDomainName(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
-          } else {
-            addDnsDomainName(this.form).then(response => {
+          addDnsDomainName(this.form).then(response => {
+            if (response.data.code == 0) {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
-            });
-          }
+            } else {
+              this.$modal.msgError(response.data.message);
+            }
+            if ((response.data.code == -5) || (response.data.code == -6)) {
+              this.title = "验证域名所有权";
+              this.validateContent = response.data.content;
+              this.isValidate = true;
+            }
+          });
         }
       });
     },
