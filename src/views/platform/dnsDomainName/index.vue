@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+    <el-form @submit.native.prevent :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="域名" prop="domainName">
         <el-input
           v-model="queryParams.domainName"
@@ -100,7 +100,9 @@
       </el-table-column>
       <el-table-column label="状态" align="center" prop="domainNameStatus">
         <template slot-scope="scope">
-          <dict-tag @click="" style="cursor: pointer;" :options="dict.type.domain_status" :value="scope.row.domainNameStatus"/>
+          <div @click="repeatValidateDomainName(scope.row)">
+            <dict-tag style="cursor: pointer;" :options="dict.type.domain_status" :value="scope.row.domainNameStatus"/>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" />
@@ -110,8 +112,8 @@
           <el-button
             size="mini"
             type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
+            icon="el-icon-upload"
+            @click="handleResolution(scope.row)"
             v-hasPermi="['platform:dnsDomainName:edit']"
           >解析</el-button>
           <el-button
@@ -165,7 +167,7 @@
 </template>
 
 <script>
-import { listDnsDomainName, getDnsDomainName, delDnsDomainName, addDnsDomainName, validateDnsDomainName, updateDnsDomainNameDnssec } from "@/api/platform/dnsDomainName";
+import { listDnsDomainName, delDnsDomainName, addDnsDomainName, validateDnsDomainName, validateRefreshDnsDomainName, updateDnsDomainNameDnssec } from "@/api/platform/dnsDomainName";
 import punycode from 'punycode'
 
 export default {
@@ -214,10 +216,29 @@ export default {
     this.getList();
   },
   methods: {
+    repeatValidateDomainName(dnsDomainName) {
+      if (dnsDomainName.domainNameStatus == "-1") {
+        this.loading = true;
+        validateRefreshDnsDomainName(dnsDomainName).then(response => {
+          if (response.data.code == 0) {
+            this.open = true;
+            this.$nextTick(() => {
+              this.title = "验证域名所有权";
+              this.form = JSON.parse(JSON.stringify(dnsDomainName));
+              this.isValidate = true;
+              this.validateContent = response.data.content;
+            })
+          } else {
+            this.$message.error(response.data.message);
+          }
+          this.loading = false;
+        });
+      }
+    },
     submitFormValidateDomainName() {
       validateDnsDomainName(this.form).then(response => {
         if (response.data.code == 0) {
-          this.$modal.msgSuccess("新增成功");
+          this.$modal.msgSuccess("验证成功");
           this.open = false;
           this.getList();
         } else {
@@ -352,11 +373,32 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$modal.confirm('是否确认删除域名编号为"' + ids + '"的数据项？').then(function() {
-        return delDnsDomainName(ids);
-      }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
+      let deleteDomainNameList;
+      if (!ids.length) {
+        this.dnsDomainNameList.forEach(dnsDomainName => {
+          if (ids == dnsDomainName.id) {
+            deleteDomainNameList = dnsDomainName.domainName
+          }
+        })
+      } else {
+        deleteDomainNameList = [];
+        this.dnsDomainNameList.forEach(dnsDomainName => {
+          this.ids.forEach(id => {
+            if (id == dnsDomainName.id) {
+              deleteDomainNameList.push(dnsDomainName.domainName);
+            }
+          })
+        })
+      }
+      this.$modal.confirm('是否确认删除域名"' + deleteDomainNameList + '"？').then(function() {
+        delDnsDomainName(ids).then(response => {
+          if (response.data.code == 0) {
+            this.getList();
+            this.$modal.msgSuccess("删除成功");
+          } else {
+            this.$modal.msgError(response.data.message);
+          }
+        });
       }).catch(() => {});
     },
     /** 导出按钮操作 */

@@ -9,19 +9,20 @@ export function listDnsDomainName(query) {
   })
 }
 
-// 查询域名详细
-export function getDnsDomainName(id) {
-  return request({
-    url: '/platform/dnsDomainName/' + id,
-    method: 'get'
-  })
-}
-
 // 新增域名
 export function addDnsDomainName(data) {
   return request({
     url: '/platform/dnsDomainName',
     method: 'post',
+    data: data
+  })
+}
+
+// 刷新验证域名
+export function validateRefreshDnsDomainName(data) {
+  return request({
+    url: '/platform/dnsDomainName/validate/refresh',
+    method: 'put',
     data: data
   })
 }
