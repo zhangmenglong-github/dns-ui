@@ -23,11 +23,23 @@ export default {
     height: {
       type: String,
       default: '300px'
+    },
+    chartData: {
+      type: Object,
+      required: true
     }
   },
   data() {
     return {
       chart: null
+    }
+  },
+  watch: {
+    chartData: {
+      deep: true,
+      handler() {
+        this.setOptions()
+      }
     }
   },
   mounted() {
@@ -43,9 +55,14 @@ export default {
     this.chart = null
   },
   methods: {
-    initChart() {
-      this.chart = echarts.init(this.$el, 'macarons')
-
+    setOptions() {
+      let queryName = this.chartData.queryName;
+      let xAxisData = [];
+      let seriesData = [];
+      Object.keys(this.chartData.queryTypeCount).forEach(type => {
+        xAxisData.push(type);
+        seriesData.push(this.chartData.queryTypeCount[type]);
+      })
       this.chart.setOption({
         tooltip: {
           trigger: 'axis',
@@ -62,7 +79,7 @@ export default {
         },
         xAxis: [{
           type: 'category',
-          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          data: xAxisData,
           axisTick: {
             alignWithLabel: true
           }
@@ -74,28 +91,18 @@ export default {
           }
         }],
         series: [{
-          name: 'pageA',
+          name: queryName,
           type: 'bar',
           stack: 'vistors',
           barWidth: '60%',
-          data: [79, 52, 200, 334, 390, 330, 220],
-          animationDuration
-        }, {
-          name: 'pageB',
-          type: 'bar',
-          stack: 'vistors',
-          barWidth: '60%',
-          data: [80, 52, 200, 334, 390, 330, 220],
-          animationDuration
-        }, {
-          name: 'pageC',
-          type: 'bar',
-          stack: 'vistors',
-          barWidth: '60%',
-          data: [30, 52, 200, 334, 390, 330, 220],
-          animationDuration
+          data: seriesData,
+          animationDuration: animationDuration
         }]
       })
+    },
+    initChart() {
+      this.chart = echarts.init(this.$el, 'macarons');
+      this.setOptions();
     }
   }
 }

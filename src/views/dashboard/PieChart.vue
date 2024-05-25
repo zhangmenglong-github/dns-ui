@@ -21,11 +21,23 @@ export default {
     height: {
       type: String,
       default: '300px'
+    },
+    chartData: {
+      type: Array,
+      required: true
     }
   },
   data() {
     return {
       chart: null
+    }
+  },
+  watch: {
+    chartData: {
+      deep: true,
+      handler(val) {
+        this.setOptions(val)
+      }
     }
   },
   mounted() {
@@ -41,38 +53,44 @@ export default {
     this.chart = null
   },
   methods: {
-    initChart() {
-      this.chart = echarts.init(this.$el, 'macarons')
-
+    setOptions() {
+      let seriesData = [];
+      this.chartData.forEach(query => {
+        seriesData.push({
+          name: query.queryName,
+          value: [query.queryCount]
+        });
+      })
       this.chart.setOption({
         tooltip: {
           trigger: 'item',
           formatter: '{a} <br/>{b} : {c} ({d}%)'
         },
         legend: {
+          type: 'scroll',
           left: 'center',
-          bottom: '10',
-          data: ['Industries', 'Technology', 'Forex', 'Gold', 'Forecasts']
+          bottom: '10'
         },
         series: [
           {
-            name: 'WEEKLY WRITE ARTICLES',
+            name: '子域解析数量',
             type: 'pie',
             roseType: 'radius',
             radius: [15, 95],
             center: ['50%', '38%'],
-            data: [
-              { value: 320, name: 'Industries' },
-              { value: 240, name: 'Technology' },
-              { value: 149, name: 'Forex' },
-              { value: 100, name: 'Gold' },
-              { value: 59, name: 'Forecasts' }
-            ],
+            data: seriesData,
             animationEasing: 'cubicInOut',
             animationDuration: 2600
           }
         ]
       })
+    },
+    initChart() {
+      this.chart = echarts.init(this.$el, 'macarons')
+      this.chart.on('click', (event) => {
+        this.$emit("showDomainTypeCount", event.name);
+      });
+      this.setOptions();
     }
   }
 }

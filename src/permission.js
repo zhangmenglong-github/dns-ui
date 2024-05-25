@@ -34,7 +34,7 @@ router.beforeEach((to, from, next) => {
         }).catch(err => {
             store.dispatch('LogOut').then(() => {
               Message.error(err)
-              next({ path: '/' })
+              next(`/login?redirect=${encodeURIComponent(to.fullPath)}`) // 否则全部重定向到登录页
             })
           })
       } else {

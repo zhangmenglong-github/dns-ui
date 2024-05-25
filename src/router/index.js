@@ -74,7 +74,7 @@ export const constantRoutes = [
         path: '/adminIndex',
         component: () => import('@/views/adminIndex'),
         name: 'adminIndex',
-        meta: { title: '管理首页', icon: 'dashboard', affix: true }
+        meta: { title: '首页', icon: 'dashboard', affix: true }
       }
     ]
   },
