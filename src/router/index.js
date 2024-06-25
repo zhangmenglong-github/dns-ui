@@ -79,6 +79,20 @@ export const constantRoutes = [
     ]
   },
   {
+    path: '',
+    component: Layout,
+    hidden: true,
+    redirect: 'noredirect',
+    children: [
+      {
+        path: '/dnsDomainName/record',
+        component: () => import('@/views/platform/dnsDomainNameRecord/index'),
+        name: '云解析',
+        meta: { title: '云解析', icon: 'dashboard', affix: true }
+      }
+    ]
+  },
+  {
     path: '/user',
     component: Layout,
     hidden: true,

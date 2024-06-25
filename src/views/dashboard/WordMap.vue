@@ -87,10 +87,10 @@ export default {
             name: this.countryCodeMap.get(countryCode),
             value: this.chartData[countryCode]
           });
+          max = max < this.chartData[countryCode] ? this.chartData[countryCode] : max;
         } else {
-          nullGeoCount = this.chartData[countryCode];
+          nullGeoCount = this.chartData["null"] ? this.chartData["null"] : 0;
         }
-        max = max < this.chartData[countryCode] ? this.chartData[countryCode] : max;
       });
       max = (max == 0) ? 9999 : max;
       this.chart.setOption({

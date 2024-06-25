@@ -1,5 +1,50 @@
 import request from '@/utils/request'
 
+
+// 删除域名记录
+export function delDnsDomainNameRecord(id) {
+  return request({
+    url: '/platform/dnsDomainName/record/' + id,
+    method: 'delete'
+  })
+}
+
+// 修改域名记录
+export function updateDnsDomainNameRecord(data) {
+  return request({
+    url: '/platform/dnsDomainName/record/update',
+    method: 'post',
+    data: data
+  })
+}
+
+// 获取域名记录
+export function getDnsDomainNameRecord(data) {
+  return request({
+    url: '/platform/dnsDomainName/record/get',
+    method: 'get',
+    params: data
+  })
+}
+
+// 新增域名记录
+export function addDnsDomainNameRecord(data) {
+  return request({
+    url: '/platform/dnsDomainName/record/add',
+    method: 'post',
+    data: data
+  })
+}
+
+// 查询域名记录列表
+export function listDnsDomainNameRecord(query) {
+  return request({
+    url: '/platform/dnsDomainName/record/list',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询域名统计数量
 export function listDnsDomainNameStatisticsCount(query) {
   return request({

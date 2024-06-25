@@ -169,6 +169,7 @@
 <script>
 import { listDnsDomainName, delDnsDomainName, addDnsDomainName, validateDnsDomainName, validateRefreshDnsDomainName, updateDnsDomainNameDnssec } from "@/api/platform/dnsDomainName";
 import punycode from 'punycode'
+import * as domain from 'domain'
 
 export default {
   name: "DnsDomainName",
@@ -216,6 +217,9 @@ export default {
     this.getList();
   },
   methods: {
+    handleResolution(domainName) {
+      this.$router.push("/dnsDomainName/record?domainNameId=" + domainName.id + "&domainName=" + domainName.domainName);
+    },
     repeatValidateDomainName(dnsDomainName) {
       if (dnsDomainName.domainNameStatus == "-1") {
         this.loading = true;
@@ -374,7 +378,7 @@ export default {
     handleDelete(row) {
       const ids = row.id || this.ids;
       let deleteDomainNameList;
-      if (!ids.length) {
+      if ((typeof ids) == 'string') {
         this.dnsDomainNameList.forEach(dnsDomainName => {
           if (ids == dnsDomainName.id) {
             deleteDomainNameList = dnsDomainName.domainName
